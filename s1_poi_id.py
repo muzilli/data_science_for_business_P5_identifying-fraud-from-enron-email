@@ -6,8 +6,7 @@ import pickle
 from sklearn.cross_validation import StratifiedShuffleSplit
 
 from feature_format import featureFormat, targetFeatureSplit
-import tester
-from sklearn.metrics import recall_score, precision_score, make_scorer
+from tester import dump_classifier_and_data, test_classifier,main
 
 # parameter optimization (not currently used)
 from sklearn.grid_search import GridSearchCV
@@ -313,247 +312,169 @@ df.fillna(value=0.0, inplace=True)
 #criar my_dataset com dataframe apos a limpeza dos dados e criacao das novas features
 my_dataset = pd.DataFrame.to_dict(df,orient='index')
 my_feature_list = features_list[:]
-my_feature_list = my_feature_list + new_features
 
-# ### Criar duas variaveis locais labels e features para serem utilizadas para teste local
-# # Selecao de caracteristicas feita de forma inteligente (relacionado com o mini-projeto: Licao 11)
-# labels,features = df[my_feature_list[0]],df[my_feature_list[1:]]
-#
-# from sklearn.feature_selection import SelectKBest
-#
-# k = 8
-# k_best = SelectKBest(k=k)
-# k_best.fit(features, labels)
-# scores = k_best.scores_
-# unsorted_pairs = zip(my_feature_list[1:], scores)
-# sorted_pairs = list(reversed(sorted(unsorted_pairs, key=lambda x: x[1])))
-# k_best_features = dict(sorted_pairs[:k])
-#
-# print "{0} melhores caracteristicas: {1} a serem utilizadas \n".format(k, k_best_features.keys())
-# print sorted_pairs
-#
-# print "Inserir na minha lista de features, as features levantadas pelo k best e as 3 novas features criadas"
-# my_feature_list_old = my_feature_list[:]
-# my_feature_list = [target_label] + k_best_features.keys() + new_features
-# print my_feature_list
-#
-# # print features
-# print "{0} caracteristicas selecionadas: {1}\n".format(len(my_feature_list) - 1, my_feature_list[1:])
-#
-# ### Criar duas variaveis locais labels e features para serem utilizadas para teste local
-# # Ajuste de escala das caracteristicas feito corretamente
-# df2 = df.copy()
-# labels,features = df[my_feature_list[0]],df[my_feature_list[1:]]
-#
-# # escalonamento de caracteristicas via min-max
-# from sklearn import preprocessing
-# scaler = preprocessing.MinMaxScaler()
-# features = scaler.fit_transform(features)
-#
-# # copiand as features escalonadas para dentro do dataframe
-# df2[my_feature_list[1:]] = features
-#
-# #realizando uma copia do my_dataframe para um outro atributo para avaliar os atributos iniciais
-# my_dataset_old = my_dataset.copy()
-#
-# # criar o my_dataset com os dados do dataframe com os dados escalonados
-# my_dataset = pd.DataFrame.to_dict(df2,orient='index')
+### Criar duas variaveis locais labels e features para serem utilizadas para teste local
+# Selecao de caracteristicas feita de forma inteligente (relacionado com o mini-projeto: Licao 11)
+labels,features = df[my_feature_list[0]],df[my_feature_list[1:]]
 
 from sklearn.feature_selection import SelectKBest
 
-def get_select_j_best_items(df, features_list):
+k = 8
+k_best = SelectKBest(k=k)
+k_best.fit(features, labels)
+scores = k_best.scores_
+unsorted_pairs = zip(my_feature_list[1:], scores)
+sorted_pairs = list(reversed(sorted(unsorted_pairs, key=lambda x: x[1])))
+k_best_features = dict(sorted_pairs[:k])
 
-    labels,features = df[features_list[0]],df[features_list[1:]]
-    k_best = SelectKBest(k='all')
-    k_best.fit(features, labels)
-    scores = k_best.scores_
-    unsorted_pairs = zip(features_list[1:], scores)
-    sorted_pairs = list(reversed(sorted(unsorted_pairs, key=lambda x: x[1])))
-    print sorted_pairs
+print "{0} melhores caracteristicas: {1} a serem utilizadas \n".format(k, k_best_features.keys())
+print sorted_pairs
 
-print
-print
-print "######################################"
-print "####                               ###"
-print "####   Print K best features_list  ###"
-print "####                               ###"
-print "######################################"
-print
-print
-get_select_j_best_items(df, features_list)
-print
-print
-print "######################################"
-print "####                               ###"
-print "####  Print K best my_feature_list ###"
-print "####                               ###"
-print "######################################"
-print
-print
-get_select_j_best_items(df, my_feature_list)
-print
-print
+print "Inserir na minha lista de features, as features levantadas pelo k best e as 3 novas features criadas"
+my_feature_list_old = my_feature_list[:]
+my_feature_list = [target_label] + k_best_features.keys() + new_features
+print my_feature_list
+
+# print features
+print "{0} caracteristicas selecionadas: {1}\n".format(len(my_feature_list) - 1, my_feature_list[1:])
+
+### Criar duas variaveis locais labels e features para serem utilizadas para teste local
+# Ajuste de escala das caracteristicas feito corretamente
+df2 = df.copy()
+labels,features = df[my_feature_list[0]],df[my_feature_list[1:]]
+
+# escalonamento de caracteristicas via min-max
+from sklearn import preprocessing
+scaler = preprocessing.MinMaxScaler()
+features = scaler.fit_transform(features)
+
+# copiand as features escalonadas para dentro do dataframe
+df2[my_feature_list[1:]] = features
+
+#realizando uma copia do my_dataframe para um outro atributo para avaliar os atributos iniciais
+my_dataset_old = my_dataset.copy()
+
+# criar o my_dataset com os dados do dataframe com os dados escalonados
+my_dataset = pd.DataFrame.to_dict(df2,orient='index')
+
 ### Task 4: Try a varity of classifiers
 ### Please name your classifier clf for easy export below.
 ### Note that if you want to do PCA or other multi-stage operations,
 ### you'll need to use Pipelines. For more info:
 ### http://scikit-learn.org/stable/modules/pipeline.html
 
-from sklearn.pipeline import Pipeline
-
-
-def printing_classifier(clf, dataset, feature_list):
-
-    tester.test_classifier(clf, dataset, feature_list)
-
-    print "Estimator"
-    print
-    print clf.best_estimator_
-    print
-    print "Features importances"
-    print clf.best_params_
-    print clf.best_score_
-
-def processing_and_printting_classifier_by_features_list_and_my_features_list(cls, param, dataset, features_list, my_feature_list):
-
-    pipe = Pipeline([
-        ('feature_selection', SelectKBest()),
-        ('classification', cls)
-    ])
-
-    grid = GridSearchCV(pipe, cv=5, n_jobs=1, param_grid=param, scoring='f1')
-
-    print "Utilizando Features Default"
-    print
-    printing_classifier(grid, dataset, features_list)
-    print
-    print
-    print "Utilizando Features Default"
-    print
-    printing_classifier(grid, dataset, my_feature_list)
-
-def precision_and_recall_score(atual, predito):
-    """Verificar precisao e recall ser o maior possivel, o minimo de 0.3."""
-    precisao = precision_score(atual, predito)
-    recall = recall_score(atual, predito)
-    if (precisao < 0.3) or (recall < 0.3):
-        return min(precisao, recall)
-    return max(precisao, recall)
-
-
-def processing_ml(dataset, features_list):
-    ### Naive Bayes Gaussian
-    from sklearn.naive_bayes import GaussianNB
-    from sklearn.tree import DecisionTreeClassifier
-
-
-    N_FEATURES_FEATURES_LIST_OPTIONS = range(1, len(features_list[1:]))
-
-    param_grid = [
-        {
-            'feature_selection__k': N_FEATURES_FEATURES_LIST_OPTIONS,
-        }
-    ]
-
-    scoring = make_scorer(precision_and_recall_score, greater_is_better=True)
-
-    print "###################################"
-    print "####                            ###"
-    print "####   GaussianNB               ###"
-    print "####                            ###"
-    print "###################################"
-    print
-    print
-    pipe_nb = Pipeline([
-        ('feature_selection', SelectKBest()),
-        ('classify', GaussianNB())
-    ])
-
-    grid_nb = GridSearchCV(pipe_nb, cv=5, n_jobs=1, param_grid=param_grid, scoring=scoring)
-    printing_classifier(grid_nb, dataset, features_list)
-
-    print "###################################"
-    print "####                            ###"
-    print "####  DecisionTreeClassifier    ###"
-    print "####                            ###"
-    print "###################################"
-    print
-
-    pipe_dt = Pipeline([
-        ('feature_selection', SelectKBest()),
-        ('classify', DecisionTreeClassifier(random_state=42))
-    ])
-
-    grid_dt = GridSearchCV(pipe_dt, cv=5, n_jobs=1, param_grid=param_grid, scoring=scoring)
-    printing_classifier(grid_dt, dataset, features_list)
-
-    print
-    print
-    print "###################################"
-    print "####                            ###"
-    print "####  DecisionTreeClassifier    ###"
-    print "####                            ###"
-    print "####        Tunning             ###"
-    print "####                            ###"
-    print "###################################"
-    print
-    print
-    print
-
-    param_grid = [
-        {
-            'feature_selection__k': N_FEATURES_FEATURES_LIST_OPTIONS,
-            'classify__criterion' : ['gini', 'entropy'],
-            'classify__splitter' : ['best'],
-            'classify__max_depth' : [2,4,6]
-        }
-    ]
-
-    grid_dt_2 = GridSearchCV(pipe_dt, cv=5, n_jobs=1, param_grid=param_grid, scoring=scoring)
-    printing_classifier(grid_dt_2, dataset, features_list)
-
-    return grid_nb, grid_dt, grid_dt_2
-
-
-def process_classifies(my_dataset, features_list, my_feature_list):
-    print "####################################################"
-    print
-    print
-    print
-    print "###################################"
-    print "####                            ###"
-    print "####   Classificadores          ###"
-    print "####                            ###"
-    print "#### Sem Featuring Engeneerinng ###"
-    print "####                            ###"
-    print "###################################"
-    print
-    print
-    print
-    grid_nb, grid_dt, grid_dt_2 = processing_ml(my_dataset, features_list)
-    print
-    print
-    print
-    print "####################################################"
-    print
-    print
-    print
-    print "###################################"
-    print "####                            ###"
-    print "####   Classificadores          ###"
-    print "####                            ###"
-    print "#### Com Featuring Engeneerinng ###"
-    print "####                            ###"
-    print "###################################"
-    print
-    print
-    print
-    grid_nb_new, grid_dt_new, grid_dt_2_new = processing_ml(my_dataset, my_feature_list)
-
-    # with open("my_classifier_all.pkl", "w") as clf_outfile:
-    #     pickle.dump((grid_nb, grid_dt, grid_dt_2, grid_nb_new, grid_dt_new, grid_dt_2_new), clf_outfile)
+print "####################################################"
 print
 print
+print
+print "###################################"
+print "####                            ###"
+print "####   Classificadores          ###"
+print "#### Sem Featuring Engeneerinng ###"
+print "###################################"
+print
+print "###################################"
+print "####                            ###"
+print "####   GaussianNB               ###"
+print "####                            ###"
+print "###################################"
+print
+### Naive Bayes Gaussian
+from sklearn.naive_bayes import GaussianNB
+nf_clf = GaussianNB()
+print "Realizando teste com o dataset sem escalonamento de variaveis"
+test_classifier(nf_clf, my_dataset_old, my_feature_list_old)
+print
+print
+print "Realizando teste com o dataset com escalonamento de variaveis e feature engeneering com a criacao das novas 3 variaveis"
+test_classifier(nf_clf, my_dataset, my_feature_list)
+
+dump_classifier_and_data(nf_clf, my_dataset, my_feature_list)
+main()
+
+print
+print
+print "Tunning"
+print "Nao Possui Tunning"
+print
+print "###################################"
+print "####                            ###"
+print "####  DecisionTreeClassifier    ###"
+print "####                            ###"
+print "###################################"
+print
+### Decision Tree Classifier
+from sklearn.tree import DecisionTreeClassifier
+dt_clf = DecisionTreeClassifier()
+print "Realizando teste com o dataset sem escalonamento de variaveis"
+test_classifier(dt_clf, my_dataset_old, my_feature_list_old)
+print
+print
+print "Realizando teste com o dataset com escalonamento de variaveis e feature engeneering com a criacao das novas 3 variaveis"
+test_classifier(dt_clf, my_dataset, my_feature_list)
+print
+print
+print "Tuning GridSearchCV"
+print
+print
+# parameters = {"criterion": ['gini', 'entropy'],
+#               "min_samples_split": [40]
+#               }
+#
+parameters = {"criterion": ['gini', 'entropy'],
+              "splitter":['best'],
+              "max_depth" : [15,20]
+              }
+opt_model_dt_clf = GridSearchCV(dt_clf, param_grid=parameters)
+test_classifier(opt_model_dt_clf, my_dataset, my_feature_list)
+print
+print
+print "Estimator"
+print
+print opt_model_dt_clf.best_estimator_
+print
+print "Features importances"
+print
+print opt_model_dt_clf.best_estimator_.feature_importances_
+print
+print "###################################"
+print "####                            ###"
+print "####  DecisionTreeRegressor     ###"
+print "####                            ###"
+print "###################################"
+print
+### Decision Tree Regressor
+from sklearn import tree
+dtr_model = tree.DecisionTreeRegressor()
+print "Realizando teste com o dataset sem escalonamento de variaveis"
+test_classifier(dtr_model, my_dataset_old, my_feature_list_old)
+print
+print
+print "Realizando teste com o dataset com escalonamento de variaveis e feature engeneering com a criacao das novas 3 variaveis"
+test_classifier(dtr_model, my_dataset, my_feature_list)
+print
+print
+print "Tuning GridSearchCV"
+print
+print
+parameters = {"criterion": ['mse'],
+              "splitter": ['best', 'random'],
+              "presort": [True, False],
+              "min_samples_split": [40,60],
+              "random_state": [20, 40]
+              }
+opt_model_dtr_model = GridSearchCV(dtr_model, param_grid=parameters)
+
+test_classifier(opt_model_dtr_model, my_dataset, my_feature_list)
+print
+print
+print "Estimator"
+print
+print opt_model_dtr_model.best_estimator_
+print
+print "Features importances"
+print
+print opt_model_dtr_model.best_estimator_.feature_importances_
 print
 print "####################################################"
 
@@ -570,39 +491,6 @@ print "####################################################"
 # features_train, features_test, labels_train, labels_test = \
 #     train_test_split(features, labels, test_size=0.3, random_state=42)
 
-
-from sklearn.naive_bayes import GaussianNB
-
-N_FEATURES_FEATURES_LIST_OPTIONS = range(1, len(features_list[1:]))
-
-param_grid = [
-    {
-        'feature_selection__k': [10]
-    }
-]
-
-scoring = make_scorer(precision_and_recall_score, greater_is_better=True)
-
-print "###################################"
-print "####                            ###"
-print "####   GaussianNB               ###"
-print "####                            ###"
-print "###################################"
-print
-print
-pipe_nb = Pipeline([
-    ('feature_selection', SelectKBest()),
-    ('classify', GaussianNB())
-])
-
-grid_nb = GridSearchCV(pipe_nb, cv=5, n_jobs=1, param_grid=param_grid, scoring=scoring)
-printing_classifier(grid_nb, my_dataset, features_list)
-print "#########################################################"
-#clf = nf_clf
-# print clf
-clf = grid_nb.best_estimator_
-tester.dump_classifier_and_data(clf, my_dataset, features_list)
-tester.main()
-
-
-
+clf = nf_clf
+print clf
+dump_classifier_and_data(clf, my_dataset, my_feature_list)
