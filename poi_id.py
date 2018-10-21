@@ -557,6 +557,7 @@ print
 print
 print "####################################################"
 
+#process_classifies(my_dataset, features_list, my_feature_list)
 
 ### Task 5: Tune your classifier to achieve better than .3 precision and recall
 ### using our testing script. Check the tester.py script in the final project
