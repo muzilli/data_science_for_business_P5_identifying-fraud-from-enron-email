@@ -122,6 +122,22 @@ restricted_stock_deferred | 0,768
 deferral_payments | 0,229
 from_messages | 0,169
 
+
+> Conforme os logs e o algoritmo final escolhido, o Naive bayes sem feature engeneering com k=10, sendo assim as características mais importantes foram :
+- total_stock_value | 22,510
+- exercised_stock_options | 22,349
+- bonus | 20,792
+- salary | 18,289
+- deferred_income | 11,425
+- long_term_incentive | 9,922
+- total_payments | 9,284
+- restricted_stock | 8,825
+- shared_receipt_with_poi | 8,589
+- loan_advances | 7,184
+
+
+#### Escalonamento e normalização de características
+
 Devido os tipos de algoritmos escolhidos foram Naive Bayes e Decision Tree são algoritmos que não precisam de escalonamento e normalização não foi realizado processo de normaliazação neste caso, não utilizei o algoritomos para processamento de escalonamento e normalização como MinMaxScaler ou StandardScaler por exemplo.
 
 ### What algorithm did you end up using? What other one(s) did you try? How did model performance differ between algorithms?  
